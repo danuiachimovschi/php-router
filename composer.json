@@ -1,0 +1,15 @@
+{
+    "name": "eskimo/php-router",
+    "autoload": {
+        "psr-4": {
+            "Src\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "danuiachimosvchi",
+            "email": "iachimovschid@mail.ru"
+        }
+    ],
+    "require": {}
+}
