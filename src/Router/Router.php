@@ -6,8 +6,5 @@ namespace Src\Router;
 
 class Router
 {
-    public function getDany()
-    {
-        return "Dsds";
-    }
+
 }
