@@ -11,5 +11,7 @@
             "email": "iachimovschid@mail.ru"
         }
     ],
-    "require": {}
+    "require-dev": {
+        "symfony/var-dumper": "^6.1"
+    }
 }
