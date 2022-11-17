@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Eskimo;
 
 use ErrorException;
+use Throwable;
 
 /**
  * Router Class
@@ -91,24 +92,30 @@ class Router
                     }
 
                     if (is_callable($action) && $httpAllowed){
-                        if (count($arguments)) {
-                            return $action(...$arguments);   
+                        try {
+                            if (count($arguments)) {
+                                return $action(...$arguments);   
+                            }
+                            return $action();
+                        } catch (\Throwable $th) {
+                            
                         }
-                        return $action();
                     }
 
                     if (is_array($action)) {
-                        if (class_exists($action[0])) {
-                            if (method_exists(...$action))
-                            {
-                                return call_user_func(
-                                    [new $action[0], $action[1]], 
-                                    ...$arguments, 
-                                );
+                        try {
+                            if (class_exists($action[0])) {
+                                if (method_exists(...$action))
+                                {
+                                    return call_user_func(
+                                        [new $action[0], $action[1]], 
+                                        ...$arguments, 
+                                    );
+                                }
                             }
-                            die("This method of Object doesn`t Exist");
+                        } catch (\Throwable $th) {
+                            die("This Object doesn`t Exist");   
                         }
-                        die("This Object doesn`t Exist");
                     }
                 }
             }
@@ -130,7 +137,7 @@ class Router
      */
     public function getCurrentUrl(): string
     {
-        return rtrim(parse_url($_SERVER['REQUEST_URI'])['path'], '/');
+        return  "/". trim(parse_url($_SERVER['REQUEST_URI'])['path'], '/');
     }
 
     /**
