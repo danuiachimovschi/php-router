@@ -2,7 +2,8 @@
     "name": "eskimo/php-router",
     "autoload": {
         "psr-4": {
-            "Eskimo\\": "Eskimo/"
+            "Eskimo\\": "Eskimo/",
+            "Demo\\": "Demo/"
         }
     },
     "authors": [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Eskimo;
 
 use ErrorException;
+use Throwable;
 
 /**
  * Router Class
@@ -45,7 +46,11 @@ class Router
      */
     public function add(string $method, string $path, callable|array $callback, string $name = null)
     {
-        $this->routes[] = [$method, $path, $callback];
+        $this->routes[] = [
+            'methods' =>$method, 
+            'pattern' => $path, 
+            'action' => $callback
+        ];
 
         if ($name) {
             if (array_key_exists($name, $this->namedRoutes)) {
@@ -59,20 +64,64 @@ class Router
      * Get Matches from URL
      * @return void
      */
-    public function run(): void
+    public function run(): mixed
     {
-        // dump($this->routes);
-        $path = $this->getCurrentUrl();
-        $httpMethod = $_SERVER['REQUEST_METHOD'];
         if ($this->routes) {
             foreach($this->routes as $router){
-               $regexPattern = $this->pathToRegex($router[1]);
-               if (preg_match($regexPattern, $path)) {
-                    $router[2]();
-                    return;
-               }
+                extract($router);
+                $httpMethodAllowed = explode("|", $methods);
+                $httpAllowed = false;
+
+                foreach($httpMethodAllowed as $httpM)
+                {
+                    if ($httpM === $this->getCurrentRequestMethod()) {
+                        $httpAllowed = true;
+                    }
+                } 
+                if (!$httpAllowed) die("HTTP does not allow");
+
+
+                $regexPattern = $this->pathToRegex($pattern);
+
+                if (preg_match($regexPattern, $this->getCurrentUrl())) {
+                    $matchesUrl = preg_match_all($regexPattern, $this->getCurrentUrl(), $arguments,PREG_SET_ORDER);
+
+                    if ($matchesUrl) {
+                        $arguments = $arguments[0];
+                        unset($arguments[0]);
+                    }
+
+                    if (is_callable($action) && $httpAllowed){
+                        try {
+                            if (count($arguments)) {
+                                return $action(...$arguments);   
+                            }
+                            return $action();
+                        } catch (\Throwable $th) {
+                            
+                        }
+                    }
+
+                    if (is_array($action)) {
+                        try {
+                            if (class_exists($action[0])) {
+                                if (method_exists(...$action))
+                                {
+                                    return call_user_func(
+                                        [new $action[0], $action[1]], 
+                                        ...$arguments, 
+                                    );
+                                }
+                            }
+                        } catch (\Throwable $th) {
+                            die("This Object doesn`t Exist");   
+                        }
+                    }
+                }
             }
+            die("Routes does not match with current url");
         }
+        die("Routes does not register");
     }
 
     /**
@@ -88,7 +137,7 @@ class Router
      */
     public function getCurrentUrl(): string
     {
-        return rtrim(parse_url($_SERVER['REQUEST_URI'])['path'], '/');
+        return  "/". trim(parse_url($_SERVER['REQUEST_URI'])['path'], '/');
     }
 
     /**
@@ -100,5 +149,13 @@ class Router
             $router = preg_replace("/\/{(.*?)}/i", "/(.*?)", $router);
         }
         return "/^" .str_replace('/', '\/', $router) ."$/";
+    }
+
+    /**
+     * @return string Return Current Request Method
+     */
+    public function getCurrentRequestMethod(): string
+    {
+        return $_SERVER['REQUEST_METHOD'];
     }
 }
